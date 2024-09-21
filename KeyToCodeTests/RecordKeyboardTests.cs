@@ -1,7 +1,8 @@
 using System.Windows.Input;
+using KeyScripter;
 using Xunit;
 
-namespace KeyScripter.Tests
+namespace KeyScripterTests
 {
     public class RecordKeyboardTests
     {
@@ -22,8 +23,42 @@ namespace KeyScripter.Tests
             var result = recordKeyboard.TranslateToCSharp(keyEvents);
 
             // Assert
-            var expected = "KeyDown A at 100ms\nKeyUp A at 200ms\nKeyDown B at 300ms\nKeyUp B at 400ms";
+            var expected = """
+                           KeyDown(Keys.A);
+                           Sleep(100);
+                           KeyUp(Keys.A);
+                           Sleep(100);
+                           KeyDown(Keys.B);
+                           Sleep(100);
+                           KeyUp(Keys.B);
+                           Sleep(100);
+                           """;
             Assert.Equal(expected, result);
+        }
+        
+        [Fact]
+        public void TranslateKeyToString_TranslatesKeyToCSharpCode()
+        {
+            // Arrange
+            var recordKeyboard = new RecordKeyboard();
+
+            // Act
+            var result = recordKeyboard.TranslateKeyToString(Key.A, KeyEventType.KeyDown);
+
+            // Assert
+            Assert.Equal("KeyDown(Keys.A);", result);
+        }
+        
+        [Fact]
+        public void CalculateSleepTime_ReturnsCorrectSleepTime()
+        {
+            // Arrange
+            var recordKeyboard = new RecordKeyboard();
+            // Act
+            var result = recordKeyboard.CalculateSleepTime(100, 300);
+
+            // Assert
+            Assert.Equal("Sleep(200);", result);
         }
     }
 }

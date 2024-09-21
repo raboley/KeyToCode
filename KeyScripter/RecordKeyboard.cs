@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Input;
 
 namespace KeyScripter
@@ -68,7 +69,28 @@ namespace KeyScripter
 
         public string TranslateToCSharp(List<KeyEvent> keyEvents)
         {
-            return string.Join("\n", keyEvents);
+            long previousTimestamp = 0;
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (var keyEvent in keyEvents)
+            {
+                stringBuilder.AppendLine(TranslateKeyToString(keyEvent.Key, keyEvent.EventType));
+                stringBuilder.AppendLine(CalculateSleepTime(previousTimestamp, keyEvent.Timestamp));
+                previousTimestamp = keyEvent.Timestamp;
+            }
+            
+            // trim the last new line
+            stringBuilder.Length -= 2;
+            return stringBuilder.ToString();
+        }
+        
+        public string TranslateKeyToString(Key key, KeyEventType eventType)
+        {
+            return $"{eventType}(Keys.{key});";
+        }
+        
+        public string CalculateSleepTime(long previousTimestamp, long currentTimestamp)
+        {
+            return $"Sleep({currentTimestamp - previousTimestamp});";
         }
 
         private const int WH_KEYBOARD_LL = 13;
