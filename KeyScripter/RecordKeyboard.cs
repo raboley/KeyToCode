@@ -62,7 +62,13 @@ namespace KeyScripter
 
         private string TranslateInput()
         {
+            return TranslateToCSharp(_keyEvents);
             return string.Join("\n", _keyEvents);
+        }
+
+        public string TranslateToCSharp(List<KeyEvent> keyEvents)
+        {
+            return string.Join("\n", keyEvents);
         }
 
         private const int WH_KEYBOARD_LL = 13;
