@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Input;
 
-namespace KeyScripter
+namespace KeyToCode
 {
     public class RecordKeyboard
     {
@@ -49,7 +46,9 @@ namespace KeyScripter
             if (nCode >= 0 && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_KEYUP))
             {
                 int vkCode = Marshal.ReadInt32(lParam);
-                Key key = System.Windows.Input.KeyInterop.KeyFromVirtualKey(vkCode);
+                // turn the virtual key code into a VKeys
+                var key = (VKey)vkCode;
+                
                 KeyEventType eventType = wParam == (IntPtr)WM_KEYDOWN ? KeyEventType.KeyDown : KeyEventType.KeyUp;
                 _keyEvents.Add(new KeyEvent
                 {
@@ -86,9 +85,9 @@ namespace KeyScripter
             return stringBuilder.ToString();
         }
         
-        public string TranslateKeyToString(Key key, KeyEventType eventType, string keyboardName)
+        public string TranslateKeyToString(VKey key, KeyEventType eventType, string keyboardName)
         {
-            return $"{keyboardName}.{eventType}(Keys.{key});";
+            return $"{keyboardName}.{eventType}(VKeys.{key});";
         }
         
         public string CalculateSleepTime(long previousTimestamp, long currentTimestamp, string keyboardName)
@@ -118,7 +117,7 @@ namespace KeyScripter
         public List<KeyEvent> RemoveExtraKeyDownsForHeldKeys(List<KeyEvent> keyEvents)
         {
             var result = new List<KeyEvent>();
-            var heldKeys = new List<Key>();
+            var heldKeys = new List<VKey>();
             foreach (var keyEvent in keyEvents)
             {
                 if (keyEvent.EventType == KeyEventType.KeyDown)
@@ -141,7 +140,7 @@ namespace KeyScripter
 
     public class KeyEvent
     {
-        public Key Key { get; set; }
+        public VKey Key { get; set; }
         public KeyEventType EventType { get; set; }
         public long Timestamp { get; set; }
 

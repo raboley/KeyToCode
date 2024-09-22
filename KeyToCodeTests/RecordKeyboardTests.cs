@@ -1,5 +1,5 @@
 using System.Windows.Input;
-using KeyScripter;
+using KeyToCode;
 using Xunit;
 
 namespace KeyScripterTests
@@ -13,10 +13,10 @@ namespace KeyScripterTests
             var recordKeyboard = new RecordKeyboard();
             var keyEvents = new List<KeyEvent>
             {
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 200 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyDown, Timestamp = 300 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyUp, Timestamp = 400 }
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 200 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyDown, Timestamp = 300 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyUp, Timestamp = 400 }
             };
 
             // Act
@@ -24,13 +24,13 @@ namespace KeyScripterTests
 
             // Assert
             var expected = """
-                           _keyboard.KeyDown(Keys.A);
+                           _keyboard.KeyDown(VKeys.A);
                            _keyboard.Sleep(100);
-                           _keyboard.KeyUp(Keys.A);
+                           _keyboard.KeyUp(VKeys.A);
                            _keyboard.Sleep(100);
-                           _keyboard.KeyDown(Keys.B);
+                           _keyboard.KeyDown(VKeys.B);
                            _keyboard.Sleep(100);
-                           _keyboard.KeyUp(Keys.B);
+                           _keyboard.KeyUp(VKeys.B);
                            _keyboard.Sleep(100);
                            """;
             Assert.Equal(expected, result);
@@ -43,10 +43,10 @@ namespace KeyScripterTests
             var recordKeyboard = new RecordKeyboard();
 
             // Act
-            var result = recordKeyboard.TranslateKeyToString(Key.A, KeyEventType.KeyDown, "_keyboard");
+            var result = recordKeyboard.TranslateKeyToString(VKey.A, KeyEventType.KeyDown, "_keyboard");
 
             // Assert
-            Assert.Equal("_keyboard.KeyDown(Keys.A);", result);
+            Assert.Equal("_keyboard.KeyDown(VKeys.A);", result);
         }
         
         [Fact]
@@ -68,11 +68,11 @@ namespace KeyScripterTests
             var recordKeyboard = new RecordKeyboard();
             var keyEvents = new List<KeyEvent>
             {
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
             };
 
             // Act
@@ -81,10 +81,10 @@ namespace KeyScripterTests
             // Assert
             var expected = new List<KeyEvent>
             {
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
-                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = VKey.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
             };
 
             // assert each key event is the same
@@ -103,11 +103,11 @@ namespace KeyScripterTests
             var recordKeyboard = new RecordKeyboard();
             var keyEvents = new List<KeyEvent>
             {
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
             };
 
             // Act
@@ -116,10 +116,10 @@ namespace KeyScripterTests
             // Assert
             var expected = new List<KeyEvent>
             {
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
-                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
             };
 
             // assert each key event is the same

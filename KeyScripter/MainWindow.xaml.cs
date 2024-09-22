@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
+using KeyToCode;
 
 namespace KeyScripter
 {
@@ -9,7 +10,7 @@ namespace KeyScripter
     {
         private bool isRecording = false;
         private RecordKeyboard _recordKeyboard = new RecordKeyboard();
-        private PlaybackKeyboard _playbackKeyboard = new PlaybackKeyboard();
+        private PlaybackKeyboardCode _playbackKeyboard = new PlaybackKeyboardCode();
 
         public MainWindow()
         {
@@ -59,7 +60,8 @@ namespace KeyScripter
                 if (parts.Length < 4) continue;
 
                 var eventType = (KeyEventType)Enum.Parse(typeof(KeyEventType), parts[0]);
-                var key = (Key)Enum.Parse(typeof(Key), parts[1]);
+                // var key = (Key)Enum.Parse(typeof(Key), parts[1]);
+                var key = (VKey)Enum.Parse(typeof(VKey), parts[1]);
                 var timestamp = long.Parse(parts[3].Replace("ms", ""));
 
                 keyEvents.Add(new KeyEvent

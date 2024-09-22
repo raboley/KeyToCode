@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Windows.Input;
-using KeyScripter;
 using KeyToCode;
 using Xunit;
 
@@ -9,17 +8,16 @@ namespace KeyScripterTests;
 public class PlaybackKeyboardCodeTests
 {
     private readonly Process _notepadProcess;
-    private string _testFileFullPath_TypesKeysIntoNotepad = @"C:\Temp\TypesKeysIntoNotepad.txt";
+    private const string TestFileFullPathTypesKeysIntoNotepad = @"C:\Temp\TypesKeysIntoNotepad.txt";
     private readonly PlaybackKeyboardCode _keyboard;
 
     public PlaybackKeyboardCodeTests()
     {
         
         _notepadProcess = new Process {StartInfo = {FileName = "notepad.exe"}};
-        ProcessStartInfo psi = new ProcessStartInfo("Notepad.Exe", _testFileFullPath_TypesKeysIntoNotepad);
+        ProcessStartInfo psi = new ProcessStartInfo("Notepad.Exe", TestFileFullPathTypesKeysIntoNotepad);
         _notepadProcess.StartInfo = psi;
          _keyboard = new PlaybackKeyboardCode();
-
     }
     
     [Fact]
@@ -27,40 +25,39 @@ public class PlaybackKeyboardCodeTests
     {
         // Arrange
         // create test file with no content
-        File.WriteAllText(_testFileFullPath_TypesKeysIntoNotepad, string.Empty);
+        File.WriteAllText(TestFileFullPathTypesKeysIntoNotepad, string.Empty);
         var expected = "ab";
         _notepadProcess.Start();
         _notepadProcess.WaitForInputIdle();
         _keyboard.Connect(_notepadProcess.MainWindowHandle);
         
         // Act
-        _keyboard.KeyDown(VKeys.KEY_A);
+        //// Type "ab" into notepad
+        _keyboard.KeyDown(VKey.A);
         _keyboard.Sleep(50);
-        _keyboard.KeyUp(VKeys.KEY_A);
+        _keyboard.KeyUp(VKey.A);
         _keyboard.Sleep(50);
-        _keyboard.KeyDown(VKeys.KEY_B);
+        _keyboard.KeyDown(VKey.B);
         _keyboard.Sleep(50);
-        _keyboard.KeyUp(VKeys.KEY_B);
+        _keyboard.KeyUp(VKey.B);
         _keyboard.Sleep(50);
-        _keyboard.KeyDown(VKeys.KEY_LCONTROL);
+        
+        //// Save the file
+        _keyboard.KeyDown(VKey.LCONTROL);
         _keyboard.Sleep(50);
-        _keyboard.KeyDown(VKeys.KEY_S);
+        _keyboard.KeyDown(VKey.S);
         _keyboard.Sleep(50);
-        _keyboard.KeyUp(VKeys.KEY_S);
+        _keyboard.KeyUp(VKey.S);
         _keyboard.Sleep(50);
-        _keyboard.KeyUp(VKeys.KEY_LCONTROL);
+        _keyboard.KeyUp(VKey.LCONTROL);
         _keyboard.Sleep(50);
 
         // Assert
-        // Save the file
-        
-        
         _notepadProcess.CloseMainWindow();
         _notepadProcess.Kill();
         _notepadProcess.WaitForExit();
         
-        var actual = File.ReadAllText(_testFileFullPath_TypesKeysIntoNotepad);
-        // reset the file
+        var actual = File.ReadAllText(TestFileFullPathTypesKeysIntoNotepad);
         Assert.Equal(expected, actual);
     }
     

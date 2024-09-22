@@ -9,10 +9,6 @@
         <IsTestProject>true</IsTestProject>
         <RootNamespace>KeyScripterTests</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\KeyScripter\KeyScripter.csproj" />
-    </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.1"/>
@@ -25,6 +21,10 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\KeyToCode\KeyToCode.csproj" />
     </ItemGroup>
 
 </Project>
