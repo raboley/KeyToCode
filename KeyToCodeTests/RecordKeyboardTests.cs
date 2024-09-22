@@ -45,7 +45,7 @@ public class RecordKeyboardTests
         var result = recordKeyboard.TranslateKeyToString(VKey.A, KeyEventType.KeyDown, "_keyboard");
 
         // Assert
-        Assert.Equal("_keyboard.KeyDown(VKeys.A);", result);
+        Assert.Equal("_keyboard.KeyDown(VKey.A);", result);
     }
 
     [Fact]

@@ -93,7 +93,7 @@ public class RecordKeyboard
 
     public string TranslateKeyToString(VKey key, KeyEventType eventType, string keyboardName)
     {
-        return $"{keyboardName}.{eventType}(VKeys.{key});";
+        return $"{keyboardName}.{eventType}(VKey.{key});";
     }
 
     public string CalculateSleepTime(long previousTimestamp, long currentTimestamp, string keyboardName)

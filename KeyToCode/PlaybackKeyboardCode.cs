@@ -1,4 +1,6 @@
 ﻿using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace KeyToCode;
 
@@ -154,8 +156,22 @@ public class PlaybackKeyboardCode
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    public void Play(List<KeyEvent> keyEvents)
+    public async Task Play(string inputKeys)
     {
-        throw new NotImplementedException();
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => !string.IsNullOrEmpty(a.Location));
+
+        var scriptOptions = ScriptOptions.Default
+            .AddReferences(assemblies)
+            .AddImports("System", "System.Threading", "KeyToCode");
+
+        var script = CSharpScript.Create(inputKeys, scriptOptions, typeof(Globals));
+        var globals = new Globals { _keyboard = this };
+        await script.RunAsync(globals);
     }
+}
+
+public class Globals
+{
+    public PlaybackKeyboardCode _keyboard;
 }
