@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyScripter", "KeyScripter\KeyScripter.csproj", "{B83F0732-649D-431E-BA80-1B7BD36DF2CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyToCodeRecorder", "KeyToCodeRecorder\KeyToCodeRecorder.csproj", "{B83F0732-649D-431E-BA80-1B7BD36DF2CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyToCodeTests", "KeyToCodeTests\KeyToCodeTests.csproj", "{2891F396-73A6-4EED-AF92-E42A8F2639A6}"
 EndProject
