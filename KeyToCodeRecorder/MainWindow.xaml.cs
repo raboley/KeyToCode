@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -16,11 +18,13 @@ public partial class MainWindow
     private readonly PlaybackKeyboardCode _playbackKeyboard = new();
     private readonly RecordKeyboard _recordKeyboard = new();
     private bool _isRecording;
+    private const string ConfigFilePath = "config.json";
 
     public MainWindow()
     {
         InitializeComponent();
         PopulateProcessComboBox();
+        LoadSelectedProcess();
     }
 
     private void PopulateProcessComboBox()
@@ -77,6 +81,7 @@ public partial class MainWindow
         {
             var selectedProcess = Process.GetProcessById(selectedProcessId);
             _playbackKeyboard.Connect(selectedProcess.MainWindowHandle);
+            SaveSelectedProcess(selectedProcess.ProcessName);
         }
     }
 
@@ -135,5 +140,48 @@ public partial class MainWindow
         }
 
         return keyEvents;
+    }
+
+    private void SaveSelectedProcess(string processName)
+    {
+        var config = GetConfig() ?? new Config();
+        config.LastSelectedProcessName = processName;
+        
+        WriteConfig(config);
+    }
+
+    private static void WriteConfig(Config config)
+    {
+        var json = JsonSerializer.Serialize(config);
+        File.WriteAllText(ConfigFilePath, json);
+    }
+
+    private void LoadSelectedProcess()
+    {
+        var config = GetConfig();
+        if (config == null)
+            return;
+
+        var process = Process.GetProcesses().FirstOrDefault(p =>
+            p.ProcessName == config.LastSelectedProcessName && p.MainWindowHandle != IntPtr.Zero);
+        if (process == null)
+            return;
+        
+        ProcessComboBox.SelectedValue = process.Id;
+    }
+
+    private static Config? GetConfig()
+    {
+        if (!File.Exists(ConfigFilePath))
+            return null;
+
+        var json = File.ReadAllText(ConfigFilePath);
+        var config = JsonSerializer.Deserialize<Config>(json);
+        return config;
+    }
+
+    private class Config
+    {
+        public string? LastSelectedProcessName { get; set; }
     }
 }
