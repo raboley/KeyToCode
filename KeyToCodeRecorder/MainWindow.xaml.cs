@@ -10,21 +10,45 @@ using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using KeyToCode;
 using System.Windows.Interop;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Microsoft.Win32;
 
 namespace KeyScripter;
 
-public partial class MainWindow
+public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly PlaybackKeyboardCode _playbackKeyboard = new();
     private readonly RecordKeyboard _recordKeyboard = new();
     private bool _isRecording;
     private const string ConfigFilePath = "config.json";
+    private Config _config;
+    private string? _currentFilePath;
 
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = this;
         PopulateProcessComboBox();
-        LoadSelectedProcess();
+        LoadConfig();
+        if (_config == null)
+        {
+            _config = new Config();
+            WriteConfig();
+            return;
+        }
+        
+        if (_config.AutomaticallySelectLastProcess)
+            LoadSelectedProcess();
+
+        if (_config.AutomaticallyOpenLastSavedFile)
+        {
+            _currentFilePath = _config.LastSavedFilePath;
+            if (File.Exists(_currentFilePath))
+            {
+                OutputTextBox.Text = File.ReadAllText(_currentFilePath);
+            }
+        }
     }
 
     private void PopulateProcessComboBox()
@@ -81,7 +105,10 @@ public partial class MainWindow
         {
             var selectedProcess = Process.GetProcessById(selectedProcessId);
             _playbackKeyboard.Connect(selectedProcess.MainWindowHandle);
-            SaveSelectedProcess(selectedProcess.ProcessName);
+            if (_config.AutomaticallySelectLastProcess)
+            {
+                SaveSelectedProcess(selectedProcess.ProcessName);
+            }
         }
     }
 
@@ -98,6 +125,10 @@ public partial class MainWindow
             RecordButton.Content = "● Record";
             var output = StopRecording();
             OutputTextBox.Text = output;
+            if (_config.AutomaticallyCopyOutputToClipboard)
+            {
+                Clipboard.SetText(output);
+            }
         }
     }
 
@@ -144,30 +175,32 @@ public partial class MainWindow
 
     private void SaveSelectedProcess(string processName)
     {
-        var config = GetConfig() ?? new Config();
-        config.LastSelectedProcessName = processName;
-        
-        WriteConfig(config);
-    }
-
-    private static void WriteConfig(Config config)
-    {
-        var json = JsonSerializer.Serialize(config);
-        File.WriteAllText(ConfigFilePath, json);
+        _config.LastSelectedProcessName = processName;
+        WriteConfig();
     }
 
     private void LoadSelectedProcess()
     {
-        var config = GetConfig();
-        if (config == null)
-            return;
-
         var process = Process.GetProcesses().FirstOrDefault(p =>
-            p.ProcessName == config.LastSelectedProcessName && p.MainWindowHandle != IntPtr.Zero);
-        if (process == null)
-            return;
-        
-        ProcessComboBox.SelectedValue = process.Id;
+            p.ProcessName == _config.LastSelectedProcessName && p.MainWindowHandle != IntPtr.Zero);
+        if (process != null)
+        {
+            ProcessComboBox.SelectedValue = process.Id;
+        }
+    }
+
+    private void LoadConfig()
+    {
+        _config = GetConfig() ?? new Config();
+        OnPropertyChanged(nameof(AutomaticallySelectLastProcess));
+        OnPropertyChanged(nameof(AutomaticallyCopyOutputToClipboard));
+        OnPropertyChanged(nameof(AutomaticallyOpenLastSavedFile));
+    }
+
+    private void WriteConfig()
+    {
+        var json = JsonSerializer.Serialize(_config);
+        File.WriteAllText(ConfigFilePath, json);
     }
 
     private static Config? GetConfig()
@@ -180,8 +213,112 @@ public partial class MainWindow
         return config;
     }
 
+    public bool AutomaticallySelectLastProcess
+    {
+        get => _config.AutomaticallySelectLastProcess;
+        set
+        {
+            if (_config.AutomaticallySelectLastProcess != value)
+            {
+                _config.AutomaticallySelectLastProcess = value;
+                OnPropertyChanged();
+                WriteConfig();
+            }
+        }
+    }
+
+    public bool AutomaticallyCopyOutputToClipboard
+    {
+        get => _config.AutomaticallyCopyOutputToClipboard;
+        set
+        {
+            if (_config.AutomaticallyCopyOutputToClipboard != value)
+            {
+                _config.AutomaticallyCopyOutputToClipboard = value;
+                OnPropertyChanged();
+                WriteConfig();
+            }
+        }
+    }
+
+    public bool AutomaticallyOpenLastSavedFile
+    {
+        get => _config.AutomaticallyOpenLastSavedFile;
+        set
+        {
+            if (_config.AutomaticallyOpenLastSavedFile != value)
+            {
+                _config.AutomaticallyOpenLastSavedFile = value;
+                OnPropertyChanged();
+                WriteConfig();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     private class Config
     {
         public string? LastSelectedProcessName { get; set; }
+        public string? LastSavedFilePath { get; set; }
+        public bool AutomaticallySelectLastProcess { get; set; } = true;
+        public bool AutomaticallyCopyOutputToClipboard { get; set; } = true;
+
+        public bool AutomaticallyOpenLastSavedFile { get; set; } = false;
+    }
+
+    private void OpenFile_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            _currentFilePath = openFileDialog.FileName;
+            _config.LastSavedFilePath = _currentFilePath;
+            OutputTextBox.Text = File.ReadAllText(_currentFilePath);
+        }
+    }
+
+    private void SaveFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentFilePath))
+        {
+            SaveAsFile_Click(sender, e);
+        }
+        else
+        {
+            File.WriteAllText(_currentFilePath, OutputTextBox.Text);
+            _config.LastSavedFilePath = _currentFilePath;
+            WriteConfig();
+        }
+    }
+
+    private void SaveAsFile_Click(object sender, RoutedEventArgs e)
+    {
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+        };
+
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            _currentFilePath = saveFileDialog.FileName;
+            _config.LastSavedFilePath = _currentFilePath;
+            WriteConfig();
+            File.WriteAllText(_currentFilePath, OutputTextBox.Text);
+        }
+    }
+
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
     }
 }

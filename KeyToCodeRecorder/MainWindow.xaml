@@ -10,6 +10,20 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Menu>
+            <MenuItem Header="File">
+                <MenuItem Header="Open" Click="OpenFile_Click" />
+                <MenuItem Header="Save" Click="SaveFile_Click" />
+                <MenuItem Header="Save As" Click="SaveAsFile_Click" />
+                <Separator />
+                <MenuItem Header="Exit" Click="Exit_Click" />
+            </MenuItem>
+            <MenuItem Header="Config">
+                <MenuItem Header="Automatically select last Selected Process" IsCheckable="True" IsChecked="{Binding AutomaticallySelectLastProcess, Mode=TwoWay}" />
+                <MenuItem Header="Automatically copy output to clipboard" IsCheckable="True" IsChecked="{Binding AutomaticallyCopyOutputToClipboard, Mode=TwoWay}" />
+                <MenuItem Header="Automatically Re-Open the last opened Key Script file" IsCheckable="True" IsChecked="{Binding AutomaticallyOpenLastSavedFile, Mode=TwoWay}" />
+            </MenuItem>
+        </Menu>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0">
             <ComboBox x:Name="ProcessComboBox" Width="300" Height="30" SelectionChanged="ProcessComboBox_SelectionChanged">
                 <ComboBox.ItemTemplate>
