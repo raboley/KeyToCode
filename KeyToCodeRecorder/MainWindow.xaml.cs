@@ -132,6 +132,11 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        Clipboard.SetText(OutputTextBox.Text);
+    }
+
     private async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
         var inputKeys = OutputTextBox.Text;
