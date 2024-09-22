@@ -319,6 +319,43 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
+        if (PreventLosingWork()) 
+            return;
+        
         Application.Current.Shutdown();
+    }
+    
+    private void NewFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (PreventLosingWork()) 
+            return;
+
+        OutputTextBox.Clear();
+        _currentFilePath = null;
+    }
+
+    private bool PreventLosingWork()
+    {
+        if (IsUnsavedWork())
+        {
+            var result = MessageBox.Show("You have unsaved work. Do you want to discard it?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.No)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsUnsavedWork()
+    {
+        if (string.IsNullOrEmpty(_currentFilePath))
+        {
+            return !string.IsNullOrEmpty(OutputTextBox.Text);
+        }
+
+        var currentContent = File.ReadAllText(_currentFilePath);
+        return currentContent != OutputTextBox.Text;
     }
 }

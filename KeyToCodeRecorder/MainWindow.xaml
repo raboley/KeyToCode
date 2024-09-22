@@ -12,6 +12,7 @@
         </Grid.RowDefinitions>
         <Menu>
             <MenuItem Header="File">
+                <MenuItem Header="New" Click="NewFile_Click" />
                 <MenuItem Header="Open" Click="OpenFile_Click" />
                 <MenuItem Header="Save" Click="SaveFile_Click" />
                 <MenuItem Header="Save As" Click="SaveAsFile_Click" />
