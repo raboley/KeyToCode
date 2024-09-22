@@ -1,8 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-
-namespace KeyToCode;
+﻿namespace KeyToCode;
 
 public class KeyEventTranslatorToCSharp
 {
-
 }
