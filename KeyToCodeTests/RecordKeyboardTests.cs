@@ -24,14 +24,14 @@ namespace KeyScripterTests
 
             // Assert
             var expected = """
-                           KeyDown(Keys.A);
-                           Sleep(100);
-                           KeyUp(Keys.A);
-                           Sleep(100);
-                           KeyDown(Keys.B);
-                           Sleep(100);
-                           KeyUp(Keys.B);
-                           Sleep(100);
+                           _keyboard.KeyDown(Keys.A);
+                           _keyboard.Sleep(100);
+                           _keyboard.KeyUp(Keys.A);
+                           _keyboard.Sleep(100);
+                           _keyboard.KeyDown(Keys.B);
+                           _keyboard.Sleep(100);
+                           _keyboard.KeyUp(Keys.B);
+                           _keyboard.Sleep(100);
                            """;
             Assert.Equal(expected, result);
         }
@@ -43,10 +43,10 @@ namespace KeyScripterTests
             var recordKeyboard = new RecordKeyboard();
 
             // Act
-            var result = recordKeyboard.TranslateKeyToString(Key.A, KeyEventType.KeyDown);
+            var result = recordKeyboard.TranslateKeyToString(Key.A, KeyEventType.KeyDown, "_keyboard");
 
             // Assert
-            Assert.Equal("KeyDown(Keys.A);", result);
+            Assert.Equal("_keyboard.KeyDown(Keys.A);", result);
         }
         
         [Fact]
@@ -55,10 +55,80 @@ namespace KeyScripterTests
             // Arrange
             var recordKeyboard = new RecordKeyboard();
             // Act
-            var result = recordKeyboard.CalculateSleepTime(100, 300);
+            var result = recordKeyboard.CalculateSleepTime(100, 300, "_keyboard");
 
             // Assert
-            Assert.Equal("Sleep(200);", result);
+            Assert.Equal("_keyboard.Sleep(200);", result);
+        }
+
+        [Fact]
+        public void RemoveExtraKeyDownsForHeldKeys_RemovesExtraKeyDowns()
+        {
+            // Arrange
+            var recordKeyboard = new RecordKeyboard();
+            var keyEvents = new List<KeyEvent>
+            {
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+            };
+
+            // Act
+            var result = recordKeyboard.RemoveExtraKeyDownsForHeldKeys(keyEvents);
+
+            // Assert
+            var expected = new List<KeyEvent>
+            {
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = Key.B, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+            };
+
+            // assert each key event is the same
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.Equal(expected[i].Key, result[i].Key);
+                Assert.Equal(expected[i].EventType, result[i].EventType);
+                Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
+            }
+        }
+
+        [Fact]
+        public void RemoveExtraKeyDownsForHeldKeys_OnlyRemovesSequentialDuplicateKeyDowns()
+        {
+            // Arrange
+            var recordKeyboard = new RecordKeyboard();
+            var keyEvents = new List<KeyEvent>
+            {
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 200 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+            };
+
+            // Act
+            var result = recordKeyboard.RemoveExtraKeyDownsForHeldKeys(keyEvents);
+
+            // Assert
+            var expected = new List<KeyEvent>
+            {
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 300 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyDown, Timestamp = 400 },
+                new KeyEvent { Key = Key.A, EventType = KeyEventType.KeyUp, Timestamp = 500 }
+            };
+
+            // assert each key event is the same
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.Equal(expected[i].Key, result[i].Key);
+                Assert.Equal(expected[i].EventType, result[i].EventType);
+                Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
+            }
         }
     }
 }

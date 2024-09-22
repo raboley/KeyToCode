@@ -49,7 +49,7 @@ namespace KeyScripter
             if (nCode >= 0 && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_KEYUP))
             {
                 int vkCode = Marshal.ReadInt32(lParam);
-                Key key = KeyInterop.KeyFromVirtualKey(vkCode);
+                Key key = System.Windows.Input.KeyInterop.KeyFromVirtualKey(vkCode);
                 KeyEventType eventType = wParam == (IntPtr)WM_KEYDOWN ? KeyEventType.KeyDown : KeyEventType.KeyUp;
                 _keyEvents.Add(new KeyEvent
                 {
@@ -67,14 +67,17 @@ namespace KeyScripter
             return string.Join("\n", _keyEvents);
         }
 
-        public string TranslateToCSharp(List<KeyEvent> keyEvents)
+        public string TranslateToCSharp(List<KeyEvent> keyEvents, string keyboardName = "_keyboard")
         {
+            var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
+            
+            
             long previousTimestamp = 0;
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (var keyEvent in keyEvents)
+            foreach (var keyEvent in dedupedKeyEvents)
             {
-                stringBuilder.AppendLine(TranslateKeyToString(keyEvent.Key, keyEvent.EventType));
-                stringBuilder.AppendLine(CalculateSleepTime(previousTimestamp, keyEvent.Timestamp));
+                stringBuilder.AppendLine(TranslateKeyToString(keyEvent.Key, keyEvent.EventType, keyboardName));
+                stringBuilder.AppendLine(CalculateSleepTime(previousTimestamp, keyEvent.Timestamp, keyboardName));
                 previousTimestamp = keyEvent.Timestamp;
             }
             
@@ -83,14 +86,14 @@ namespace KeyScripter
             return stringBuilder.ToString();
         }
         
-        public string TranslateKeyToString(Key key, KeyEventType eventType)
+        public string TranslateKeyToString(Key key, KeyEventType eventType, string keyboardName)
         {
-            return $"{eventType}(Keys.{key});";
+            return $"{keyboardName}.{eventType}(Keys.{key});";
         }
         
-        public string CalculateSleepTime(long previousTimestamp, long currentTimestamp)
+        public string CalculateSleepTime(long previousTimestamp, long currentTimestamp, string keyboardName)
         {
-            return $"Sleep({currentTimestamp - previousTimestamp});";
+            return $"{keyboardName}.Sleep({currentTimestamp - previousTimestamp});";
         }
 
         private const int WH_KEYBOARD_LL = 13;
@@ -111,6 +114,29 @@ namespace KeyScripter
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        public List<KeyEvent> RemoveExtraKeyDownsForHeldKeys(List<KeyEvent> keyEvents)
+        {
+            var result = new List<KeyEvent>();
+            var heldKeys = new List<Key>();
+            foreach (var keyEvent in keyEvents)
+            {
+                if (keyEvent.EventType == KeyEventType.KeyDown)
+                {
+                    if (!heldKeys.Contains(keyEvent.Key))
+                    {
+                        heldKeys.Add(keyEvent.Key);
+                        result.Add(keyEvent);
+                    }
+                }
+                else if (keyEvent.EventType == KeyEventType.KeyUp)
+                {
+                    heldKeys.Remove(keyEvent.Key);
+                    result.Add(keyEvent);
+                }
+            }
+            return result;
+        }
     }
 
     public class KeyEvent
