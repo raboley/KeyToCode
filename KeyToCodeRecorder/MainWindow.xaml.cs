@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using KeyToCode;
+using System.Windows.Interop;
 
 namespace KeyScripter;
 
@@ -24,19 +27,54 @@ public partial class MainWindow
     {
         var processes = Process.GetProcesses()
             .Where(p => p.MainWindowHandle != IntPtr.Zero)
-            .Select(p => new { p.ProcessName, p.Id })
+            .Select(p => new
+            {
+                p.ProcessName,
+                p.Id,
+                Icon = GetProcessIcon(p)
+            })
             .ToList();
 
         ProcessComboBox.ItemsSource = processes;
-        ProcessComboBox.DisplayMemberPath = "ProcessName";
         ProcessComboBox.SelectedValuePath = "Id";
     }
 
+    private BitmapSource? GetProcessIcon(Process process)
+    {
+        IntPtr hIcon = IntPtr.Zero;
+        try
+        {
+            hIcon = ExtractIcon(IntPtr.Zero, process.MainModule.FileName, 0);
+            if (hIcon == IntPtr.Zero)
+                return null;
+
+            return Imaging.CreateBitmapSourceFromHIcon(
+                hIcon,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromEmptyOptions());
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            if (hIcon != IntPtr.Zero)
+                DestroyIcon(hIcon);
+        }
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DestroyIcon(IntPtr hIcon);
+
     private void ProcessComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ProcessComboBox.SelectedItem is not null)
+        if (ProcessComboBox.SelectedItem is not null && ProcessComboBox.SelectedValue is int selectedProcessId)
         {
-            var selectedProcessId = (int)ProcessComboBox.SelectedValue;
             var selectedProcess = Process.GetProcessById(selectedProcessId);
             _playbackKeyboard.Connect(selectedProcess.MainWindowHandle);
         }
