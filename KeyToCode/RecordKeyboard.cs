@@ -74,6 +74,9 @@ public class RecordKeyboard
 
     public string TranslateToCSharp(List<KeyEvent> keyEvents, string keyboardName = "_keyboard")
     {
+        if (keyEvents.Count == 0)
+            return "";
+        
         var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
 
 

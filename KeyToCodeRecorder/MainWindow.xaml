@@ -8,7 +8,14 @@
     <Window.CommandBindings>
         <CommandBinding Command="Save" CanExecute="Save_CanExecute" Executed="SaveFile_Click" />
         <CommandBinding Command="SaveAs" CanExecute="SaveAs_CanExecute" Executed="SaveAsFile_Click" />
+        <CommandBinding Command="New" Executed="NewFile_Click" />
+        <CommandBinding Command="Close" Executed="Exit_Click" />
     </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Command="Save" Key="S" Modifiers="Control" />
+        <KeyBinding Command="New" Key="N" Modifiers="Control" />
+        <KeyBinding Command="Close" Key="F4" Modifiers="Alt" />
+    </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -17,12 +24,12 @@
         </Grid.RowDefinitions>
         <Menu>
             <MenuItem Header="File">
-                <MenuItem Header="New" Click="NewFile_Click" />
+                <MenuItem Header="New" Command="New" />
                 <MenuItem Header="Open" Click="OpenFile_Click" />
                 <MenuItem Header="Save" Command="Save" />
                 <MenuItem Header="Save As" Command="SaveAs" />
                 <Separator />
-                <MenuItem Header="Exit" Click="Exit_Click" />
+                <MenuItem Header="Exit" Command="Close" />
             </MenuItem>
             <MenuItem Header="Config">
                 <MenuItem Header="Automatically select last Selected Process" IsCheckable="True"
