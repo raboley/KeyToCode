@@ -15,7 +15,8 @@ public class PlaybackKeyboardCodeTests
         _notepadProcess = new Process { StartInfo = { FileName = "notepad.exe" } };
         var psi = new ProcessStartInfo("Notepad.Exe", TestFileFullPathTypesKeysIntoNotepad);
         _notepadProcess.StartInfo = psi;
-        _keyboard = new PlaybackKeyboardCode();
+        var windowHelper = new WindowHelper();
+        _keyboard = new PlaybackKeyboardCode(windowHelper);
     }
 
     [Fact]

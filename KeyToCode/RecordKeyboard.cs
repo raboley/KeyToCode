@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
+// RecordKeyboard.cs
 namespace KeyToCode;
 
 public class RecordKeyboard
@@ -13,12 +14,14 @@ public class RecordKeyboard
     private readonly List<KeyEvent> _keyEvents;
     private readonly LowLevelKeyboardProc _proc;
     private readonly Stopwatch _stopwatch;
+    private readonly WindowHelper _windowHelper;
 
-    public RecordKeyboard()
+    public RecordKeyboard(WindowHelper windowHelper)
     {
         _keyEvents = new List<KeyEvent>();
         _stopwatch = new Stopwatch();
         _proc = HookCallback;
+        _windowHelper = windowHelper;
     }
 
     public void StartRecording()
@@ -52,7 +55,6 @@ public class RecordKeyboard
         if (nCode >= 0 && (wParam == WmKeydown || wParam == WmKeyup))
         {
             var vkCode = Marshal.ReadInt32(lParam);
-            // turn the virtual key code into a VKeys
             var key = (VKey)vkCode;
 
             var eventType = wParam == WmKeydown ? KeyEventType.KeyDown : KeyEventType.KeyUp;
@@ -76,9 +78,8 @@ public class RecordKeyboard
     {
         if (keyEvents.Count == 0)
             return "";
-        
-        var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
 
+        var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
 
         long previousTimestamp = 0;
         var stringBuilder = new StringBuilder();
@@ -89,7 +90,6 @@ public class RecordKeyboard
             previousTimestamp = keyEvent.Timestamp;
         }
 
-        // trim the last new line
         stringBuilder.Length -= 2;
         return stringBuilder.ToString();
     }

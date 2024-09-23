@@ -9,7 +9,8 @@ public class RecordKeyboardTests
     public void TranslateInput_ReturnsCorrectString()
     {
         // Arrange
-        var recordKeyboard = new RecordKeyboard();
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper);
         var keyEvents = new List<KeyEvent>
         {
             new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
@@ -23,13 +24,13 @@ public class RecordKeyboardTests
 
         // Assert
         var expected = """
-                       _keyboard.KeyDown(VKeys.A);
+                       _keyboard.KeyDown(VKey.A);
                        _keyboard.Sleep(100);
-                       _keyboard.KeyUp(VKeys.A);
+                       _keyboard.KeyUp(VKey.A);
                        _keyboard.Sleep(100);
-                       _keyboard.KeyDown(VKeys.B);
+                       _keyboard.KeyDown(VKey.B);
                        _keyboard.Sleep(100);
-                       _keyboard.KeyUp(VKeys.B);
+                       _keyboard.KeyUp(VKey.B);
                        _keyboard.Sleep(100);
                        """;
         Assert.Equal(expected, result);
@@ -39,7 +40,8 @@ public class RecordKeyboardTests
     public void TranslateKeyToString_TranslatesKeyToCSharpCode()
     {
         // Arrange
-        var recordKeyboard = new RecordKeyboard();
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper);
 
         // Act
         var result = recordKeyboard.TranslateKeyToString(VKey.A, KeyEventType.KeyDown, "_keyboard");
@@ -52,7 +54,8 @@ public class RecordKeyboardTests
     public void CalculateSleepTime_ReturnsCorrectSleepTime()
     {
         // Arrange
-        var recordKeyboard = new RecordKeyboard();
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper);
         // Act
         var result = recordKeyboard.CalculateSleepTime(100, 300, "_keyboard");
 
@@ -64,7 +67,8 @@ public class RecordKeyboardTests
     public void RemoveExtraKeyDownsForHeldKeys_RemovesExtraKeyDowns()
     {
         // Arrange
-        var recordKeyboard = new RecordKeyboard();
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper);
         var keyEvents = new List<KeyEvent>
         {
             new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
@@ -99,7 +103,8 @@ public class RecordKeyboardTests
     public void RemoveExtraKeyDownsForHeldKeys_OnlyRemovesSequentialDuplicateKeyDowns()
     {
         // Arrange
-        var recordKeyboard = new RecordKeyboard();
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper);
         var keyEvents = new List<KeyEvent>
         {
             new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },

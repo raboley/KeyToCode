@@ -19,8 +19,8 @@ namespace KeyScripter;
 
 public partial class MainWindow : INotifyPropertyChanged
 {
-    private readonly PlaybackKeyboardCode _playbackKeyboard = new();
-    private readonly RecordKeyboard _recordKeyboard = new();
+    private readonly PlaybackKeyboardCode _playbackKeyboard;
+    private readonly RecordKeyboard _recordKeyboard;
     private bool _isRecording;
     private const string ConfigFilePath = "config.json";
     private Config _config;
@@ -29,6 +29,9 @@ public partial class MainWindow : INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        var windowHelper = new WindowHelper();
+        _recordKeyboard = new RecordKeyboard(windowHelper);
+        _playbackKeyboard = new PlaybackKeyboardCode(windowHelper);
         DataContext = this;
         PopulateProcessComboBox();
         LoadConfig();
@@ -50,6 +53,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 OutputTextBox.Text = File.ReadAllText(_currentFilePath);
             }
         }
+
     }
     
     private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -161,6 +165,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void StartRecording()
     {
+        _playbackKeyboard.SetForegroundWindow();
         _recordKeyboard.StartRecording();
     }
 
