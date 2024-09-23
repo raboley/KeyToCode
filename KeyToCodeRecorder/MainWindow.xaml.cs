@@ -12,6 +12,7 @@ using KeyToCode;
 using System.Windows.Interop;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using Microsoft.Win32;
 
 namespace KeyScripter;
@@ -49,6 +50,21 @@ public partial class MainWindow : INotifyPropertyChanged
                 OutputTextBox.Text = File.ReadAllText(_currentFilePath);
             }
         }
+    }
+    
+    private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = IsUnsavedWork();
+    }
+
+    private void SaveAs_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = !string.IsNullOrEmpty(OutputTextBox.Text);
+    }
+
+    private void OutputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void PopulateProcessComboBox()
