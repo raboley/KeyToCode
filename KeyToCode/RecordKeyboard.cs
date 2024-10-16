@@ -15,13 +15,15 @@ public class RecordKeyboard
     private readonly LowLevelKeyboardProc _proc;
     private readonly Stopwatch _stopwatch;
     private readonly WindowHelper _windowHelper;
+    private readonly Dictionary<VKey,Action> _keyActions;
 
-    public RecordKeyboard(WindowHelper windowHelper)
+    public RecordKeyboard(WindowHelper windowHelper, Dictionary<VKey, Action> configKeyActions = null)
     {
         _keyEvents = new List<KeyEvent>();
         _stopwatch = new Stopwatch();
         _proc = HookCallback;
         _windowHelper = windowHelper;
+        _keyActions = configKeyActions;
     }
 
     public void StartRecording()
@@ -57,6 +59,12 @@ public class RecordKeyboard
             var vkCode = Marshal.ReadInt32(lParam);
             var key = (VKey)vkCode;
 
+            
+            if (wParam == WmKeyup && _keyActions.TryGetValue(key, out var action))
+            {
+                action.Invoke();
+            }
+            
             var eventType = wParam == WmKeydown ? KeyEventType.KeyDown : KeyEventType.KeyUp;
             _keyEvents.Add(new KeyEvent
             {

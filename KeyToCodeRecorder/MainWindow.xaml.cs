@@ -12,6 +12,7 @@ using KeyToCode;
 using System.Windows.Interop;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
 using Microsoft.Win32;
 
@@ -30,8 +31,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         InitializeComponent();
         var windowHelper = new WindowHelper();
-        _recordKeyboard = new RecordKeyboard(windowHelper);
-        _playbackKeyboard = new PlaybackKeyboardCode(windowHelper);
+
         DataContext = this;
         PopulateProcessComboBox();
         LoadConfig();
@@ -42,6 +42,23 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
         }
         
+        if (_config.KeyActions == null || _config.KeyActions.Count == 0)
+        {
+            _config.KeyActions = new Dictionary<string, VKey>
+            {
+                ["stopRecording"] = VKey.F5
+            };
+            WriteConfig();
+        }
+
+        var keyActions = new Dictionary<VKey, Action>
+        {
+            [_config.KeyActions["stopRecording"]] = StopRecordingAction
+        };
+
+        _recordKeyboard = new RecordKeyboard(windowHelper, keyActions);
+        _playbackKeyboard = new PlaybackKeyboardCode(windowHelper);
+
         if (_config.AutomaticallySelectLastProcess)
             LoadSelectedProcess();
 
@@ -50,10 +67,9 @@ public partial class MainWindow : INotifyPropertyChanged
             _currentFilePath = _config.LastSavedFilePath;
             if (File.Exists(_currentFilePath))
             {
-                OutputTextBox.Text = File.ReadAllText(_currentFilePath);
+                // Load the file content
             }
         }
-
     }
     
     private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -131,7 +147,10 @@ public partial class MainWindow : INotifyPropertyChanged
             }
         }
     }
-
+    private void StopRecordingAction()
+    {
+        RecordButton_Click(this, new RoutedEventArgs());
+    }
     private void RecordButton_Click(object sender, RoutedEventArgs e)
     {
         _isRecording = !_isRecording;
@@ -288,13 +307,13 @@ public partial class MainWindow : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    private class Config
+    public class Config
     {
+        public Dictionary<string, VKey> KeyActions { get; set; } = new();
         public string? LastSelectedProcessName { get; set; }
         public string? LastSavedFilePath { get; set; }
         public bool AutomaticallySelectLastProcess { get; set; } = true;
         public bool AutomaticallyCopyOutputToClipboard { get; set; } = true;
-
         public bool AutomaticallyOpenLastSavedFile { get; set; } = false;
     }
 
