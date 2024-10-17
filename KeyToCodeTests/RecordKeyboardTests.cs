@@ -24,6 +24,7 @@ public class RecordKeyboardTests
 
         // Assert
         var expected = """
+                       _keyboard.Sleep(100);
                        _keyboard.KeyDown(VKey.A);
                        _keyboard.Sleep(100);
                        _keyboard.KeyUp(VKey.A);
@@ -31,10 +32,43 @@ public class RecordKeyboardTests
                        _keyboard.KeyDown(VKey.B);
                        _keyboard.Sleep(100);
                        _keyboard.KeyUp(VKey.B);
-                       _keyboard.Sleep(100);
                        """;
         Assert.Equal(expected, result);
     }
+    
+[Fact]
+public void TranslateInput_alloctes_sleep_correctly_ReturnsCorrectString()
+{
+    // Arrange
+    var windowHelper = new WindowHelper();
+    var recordKeyboard = new RecordKeyboard(windowHelper);
+    var keyEvents = new List<KeyEvent>
+    {
+        new() { Key = VKey.F5, EventType = KeyEventType.KeyUp, Timestamp = 73 },
+        new() { Key = VKey.F, EventType = KeyEventType.KeyDown, Timestamp = 905 },
+        new() { Key = VKey.F, EventType = KeyEventType.KeyUp, Timestamp = 1049 },
+        new() { Key = VKey.Return, EventType = KeyEventType.KeyDown, Timestamp = 3641 },
+        new() { Key = VKey.Return, EventType = KeyEventType.KeyUp, Timestamp = 3721 }
+    };
+
+    // Act
+    var result = recordKeyboard.TranslateToCSharp(keyEvents);
+
+    // Assert
+    var expected = """
+                   _keyboard.Sleep(73);
+                   _keyboard.KeyUp(VKey.F5);
+                   _keyboard.Sleep(832);
+                   _keyboard.KeyDown(VKey.F);
+                   _keyboard.Sleep(144);
+                   _keyboard.KeyUp(VKey.F);
+                   _keyboard.Sleep(2592);
+                   _keyboard.KeyDown(VKey.Return);
+                   _keyboard.Sleep(80);
+                   _keyboard.KeyUp(VKey.Return);
+                   """;
+    Assert.Equal(expected, result);
+}
 
     [Fact]
     public void TranslateKeyToString_TranslatesKeyToCSharpCode()

@@ -15,7 +15,7 @@ public class RecordKeyboard
     private readonly LowLevelKeyboardProc _proc;
     private readonly Stopwatch _stopwatch;
     private readonly WindowHelper _windowHelper;
-    private readonly Dictionary<VKey,Action> _keyActions;
+    private readonly Dictionary<VKey, Action> _keyActions;
 
     public RecordKeyboard(WindowHelper windowHelper, Dictionary<VKey, Action> configKeyActions = null)
     {
@@ -59,12 +59,15 @@ public class RecordKeyboard
             var vkCode = Marshal.ReadInt32(lParam);
             var key = (VKey)vkCode;
 
-            
-            if (wParam == WmKeyup && _keyActions.TryGetValue(key, out var action))
+
+            if (_keyActions?.Count > 0)
             {
-                action.Invoke();
+                if (wParam == WmKeyup && _keyActions.TryGetValue(key, out var action))
+                {
+                    action.Invoke();
+                }
             }
-            
+
             var eventType = wParam == WmKeydown ? KeyEventType.KeyDown : KeyEventType.KeyUp;
             _keyEvents.Add(new KeyEvent
             {
@@ -89,16 +92,25 @@ public class RecordKeyboard
 
         var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
 
-        long previousTimestamp = 0;
         var stringBuilder = new StringBuilder();
-        foreach (var keyEvent in dedupedKeyEvents)
+        long previousTimestamp = 0;
+
+        // Add initial sleep for the time between 0 and the first key event's timestamp
+        stringBuilder.AppendLine(CalculateSleepTime(previousTimestamp, dedupedKeyEvents[0].Timestamp, keyboardName));
+
+        for (int i = 0; i < dedupedKeyEvents.Count; i++)
         {
+            var keyEvent = dedupedKeyEvents[i];
             stringBuilder.AppendLine(TranslateKeyToString(keyEvent.Key, keyEvent.EventType, keyboardName));
-            stringBuilder.AppendLine(CalculateSleepTime(previousTimestamp, keyEvent.Timestamp, keyboardName));
-            previousTimestamp = keyEvent.Timestamp;
+
+            if (i < dedupedKeyEvents.Count - 1)
+            {
+                var nextKeyEvent = dedupedKeyEvents[i + 1];
+                stringBuilder.AppendLine(CalculateSleepTime(keyEvent.Timestamp, nextKeyEvent.Timestamp, keyboardName));
+            }
         }
 
-        stringBuilder.Length -= 2;
+        stringBuilder.Length -= 2; // remove the last newline
         return stringBuilder.ToString();
     }
 
@@ -131,11 +143,14 @@ public class RecordKeyboard
         var heldKeys = new List<VKey>();
         foreach (var keyEvent in keyEvents)
         {
-            // if the key up is an action key then return result
-            if( keyEvent.EventType == KeyEventType.KeyDown && _keyActions.ContainsKey(keyEvent.Key))
+            if (_keyActions?.Count > 0)
             {
-                return result;
+                if (keyEvent.EventType == KeyEventType.KeyDown && _keyActions.ContainsKey(keyEvent.Key))
+                {
+                    return result;
+                }
             }
+
             if (keyEvent.EventType == KeyEventType.KeyDown)
             {
                 if (!heldKeys.Contains(keyEvent.Key))
@@ -149,13 +164,12 @@ public class RecordKeyboard
                 heldKeys.Remove(keyEvent.Key);
                 result.Add(keyEvent);
             }
-            
         }
 
         return result;
     }
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-     // sleeps are out of order, it isn't working correctly the long sleeps are getting lost or something, when i press f and then wait, it puts the long wait inbetween the f down and f up.
-     // also should make the f5 hotkey start and stop recording, so toggle it.
+    // sleeps are out of order, it isn't working correctly the long sleeps are getting lost or something, when i press f and then wait, it puts the long wait inbetween the f down and f up.
+    // also should make the f5 hotkey start and stop recording, so toggle it.
 }

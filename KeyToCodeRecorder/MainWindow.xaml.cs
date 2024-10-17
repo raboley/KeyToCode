@@ -26,6 +26,11 @@ public partial class MainWindow : INotifyPropertyChanged
     private const string ConfigFilePath = "config.json";
     private Config _config;
     private string? _currentFilePath;
+    
+    private const int WH_KEYBOARD_LL = 13;
+    private const int WM_KEYDOWN = 0x0100;
+    private static LowLevelKeyboardProc _proc = HookCallback;
+    private static IntPtr _hookID = IntPtr.Zero;
 
     public MainWindow()
     {
@@ -41,7 +46,7 @@ public partial class MainWindow : INotifyPropertyChanged
             WriteConfig();
             return;
         }
-        
+
         if (_config.KeyActions == null || _config.KeyActions.Count == 0)
         {
             _config.KeyActions = new Dictionary<string, VKey>
@@ -53,7 +58,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         var keyActions = new Dictionary<VKey, Action>
         {
-            [_config.KeyActions["stopRecording"]] = StopRecordingAction
+            [_config.KeyActions["stopRecording"]] = () => { }
         };
 
         _recordKeyboard = new RecordKeyboard(windowHelper, keyActions);
@@ -67,9 +72,61 @@ public partial class MainWindow : INotifyPropertyChanged
             _currentFilePath = _config.LastSavedFilePath;
             if (File.Exists(_currentFilePath))
             {
-                // Load the file content
+                OutputTextBox.Text = File.ReadAllText(_currentFilePath);
             }
         }
+
+        // Set the global keyboard hook
+        _hookID = SetHook(_proc);
+    }
+
+    private static IntPtr SetHook(LowLevelKeyboardProc proc)
+    {
+        using (var curProcess = Process.GetCurrentProcess())
+        using (var curModule = curProcess.MainModule)
+        {
+            return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+        }
+    }
+
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
+        {
+            int vkCode = Marshal.ReadInt32(lParam);
+            // make this dynamic, so it isn't hard coded to F5
+            // add a key for play and stop playing
+            if (vkCode == (int)VKey.F5)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var mainWindow = (MainWindow)Application.Current.MainWindow;
+                    mainWindow.RecordButton_Click(mainWindow.RecordButton, new RoutedEventArgs());
+                });
+            }
+        }
+        return CallNextHookEx(_hookID, nCode, wParam, lParam);
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    protected override void OnClosed(EventArgs e)
+    {
+        UnhookWindowsHookEx(_hookID);
+        base.OnClosed(e);
     }
     
     private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs e)
