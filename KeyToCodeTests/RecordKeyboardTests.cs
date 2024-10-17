@@ -209,4 +209,43 @@ public void TranslateInput_alloctes_sleep_correctly_ReturnsCorrectString()
             Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
         }
     }
+    // add a test to ensure that F2 is trimmed from the top of the output and the bottom of the output
+    [Fact]
+    public void RemoveExtraKeyDownsForHeldKeys_RemovesExtraKeyDownsBeforeAndAfterF2()
+    {
+        // Arrange
+        var f2StopRecordingAction = new Dictionary<VKey, Action>
+        {
+            [VKey.F2] = () => { }
+        };
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper, f2StopRecordingAction);
+        var keyEvents = new List<KeyEvent>
+        {
+            new() { Key = VKey.F2, EventType = KeyEventType.KeyUp, Timestamp = 200 },
+            new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 300 },
+            new() { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 400 },
+            new() { Key = VKey.F2, EventType = KeyEventType.KeyDown, Timestamp = 500 },
+            new() { Key = VKey.F2, EventType = KeyEventType.KeyUp, Timestamp = 600 }
+        };
+
+        // Act
+        var result = recordKeyboard.RemoveExtraKeyDownsForHeldKeys(keyEvents);
+
+        // Assert
+        var expected = new List<KeyEvent>
+        {
+            new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 300 },
+            new() { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 400 },
+        };
+
+        // assert each key event is the same
+        Assert.Equal(expected.Count, result.Count);
+        for (var i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Key, result[i].Key);
+            Assert.Equal(expected[i].EventType, result[i].EventType);
+            Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
+        }
+    }
 }

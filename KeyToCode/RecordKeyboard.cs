@@ -145,6 +145,13 @@ public class RecordKeyboard
         {
             if (_keyActions?.Count > 0)
             {
+                
+                if (keyEvent.EventType == KeyEventType.KeyUp && _keyActions.ContainsKey(keyEvent.Key))
+                {
+                    // continue to the next key
+                    continue;
+                }
+                
                 if (keyEvent.EventType == KeyEventType.KeyDown && _keyActions.ContainsKey(keyEvent.Key))
                 {
                     return result;
