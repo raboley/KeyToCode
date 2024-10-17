@@ -130,6 +130,12 @@ public class RecordKeyboard
         var result = new List<KeyEvent>();
         var heldKeys = new List<VKey>();
         foreach (var keyEvent in keyEvents)
+        {
+            // if the key up is an action key then return result
+            if( keyEvent.EventType == KeyEventType.KeyDown && _keyActions.ContainsKey(keyEvent.Key))
+            {
+                return result;
+            }
             if (keyEvent.EventType == KeyEventType.KeyDown)
             {
                 if (!heldKeys.Contains(keyEvent.Key))
@@ -143,9 +149,13 @@ public class RecordKeyboard
                 heldKeys.Remove(keyEvent.Key);
                 result.Add(keyEvent);
             }
+            
+        }
 
         return result;
     }
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+     // sleeps are out of order, it isn't working correctly the long sleeps are getting lost or something, when i press f and then wait, it puts the long wait inbetween the f down and f up.
+     // also should make the f5 hotkey start and stop recording, so toggle it.
 }

@@ -134,4 +134,45 @@ public class RecordKeyboardTests
             Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
         }
     }
+    
+    // add a test that will esure that when we press F2 to stop recording that we trim the F2 and any subsequent key events or sleep times from the output
+    [Fact]
+    public void RemoveExtraKeyDownsForHeldKeys_RemovesExtraKeyDownsAfterF2()
+    {
+        // Arrange
+        var f2StopRecordingAction = new Dictionary<VKey, Action>
+        {
+            [VKey.F2] = () => { }
+        };
+        var windowHelper = new WindowHelper();
+        var recordKeyboard = new RecordKeyboard(windowHelper, f2StopRecordingAction);
+        var keyEvents = new List<KeyEvent>
+        {
+            new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+            new() { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 200 },
+            new() { Key = VKey.F2, EventType = KeyEventType.KeyDown, Timestamp = 300 },
+            new() { Key = VKey.F2, EventType = KeyEventType.KeyUp, Timestamp = 400 },
+            new() { Key = VKey.B, EventType = KeyEventType.KeyDown, Timestamp = 500 },
+            new() { Key = VKey.B, EventType = KeyEventType.KeyUp, Timestamp = 600 }
+        };
+
+        // Act
+        var result = recordKeyboard.RemoveExtraKeyDownsForHeldKeys(keyEvents);
+
+        // Assert
+        var expected = new List<KeyEvent>
+        {
+            new() { Key = VKey.A, EventType = KeyEventType.KeyDown, Timestamp = 100 },
+            new() { Key = VKey.A, EventType = KeyEventType.KeyUp, Timestamp = 200 },
+        };
+
+        // assert each key event is the same
+        Assert.Equal(expected.Count, result.Count);
+        for (var i = 0; i < expected.Count; i++)
+        {
+            Assert.Equal(expected[i].Key, result[i].Key);
+            Assert.Equal(expected[i].EventType, result[i].EventType);
+            Assert.Equal(expected[i].Timestamp, result[i].Timestamp);
+        }
+    }
 }
