@@ -1,6 +1,5 @@
 ﻿# TODO before release
 
-* when hitting the stop recording button it should move focus back to the scripter window
 * make a button that will make the playback loop endlessly
 * package up the keyboard class and publish it
 * package up the app and publish it
