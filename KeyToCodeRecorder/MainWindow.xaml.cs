@@ -282,22 +282,52 @@ private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         RecordButton_Click(this, new RoutedEventArgs());
     }
 
-private void RecordButton_Click(object sender, RoutedEventArgs e)
-{
-    _isRecording = !_isRecording;
-    if (_isRecording)
+    private RecordingOverlay _recordingOverlay;
+
+    private void RecordButton_Click(object sender, RoutedEventArgs e)
     {
-        RecordButton.Content = "■ Stop";
-        RecordButton.Background = new SolidColorBrush(Colors.Tomato); // Lighter hue for stop mode
-        // Start recording logic
+        _isRecording = !_isRecording;
+        if (_isRecording)
+        {
+            RecordButton.Content = "■ Stop";
+            RecordButton.Background = new SolidColorBrush(Colors.Tomato); // Lighter hue for stop mode
+            StartRecording();
+
+            // Show the recording overlay
+            _recordingOverlay = new RecordingOverlay();
+            _recordingOverlay.Show();
+        }
+        else
+        {
+            RecordButton.Content = "● Record";
+            RecordButton.Background = new SolidColorBrush(Colors.Red); // Normal color
+            // Stop recording logic
+            var output = StopRecording();
+            OutputTextBox.Text = output;
+            if (_config.AutomaticallyCopyOutputToClipboard)
+            {
+                Clipboard.SetText(output);
+            }
+
+            // Hide the recording overlay
+            if (_recordingOverlay != null)
+            {
+                _recordingOverlay.Close();
+                _recordingOverlay = null;
+            }
+        }
     }
-    else
+    
+    private void StartRecording()
     {
-        RecordButton.Content = "● Record";
-        RecordButton.Background = new SolidColorBrush(Colors.Red); // Normal color
-        // Stop recording logic
+        _playbackKeyboard.SetForegroundWindow();
+        _recordKeyboard.StartRecording();
     }
-}
+
+    private string StopRecording()
+    {
+        return _recordKeyboard.StopRecording();
+    }
 
     private void CopyButton_Click(object sender, RoutedEventArgs e)
     {
