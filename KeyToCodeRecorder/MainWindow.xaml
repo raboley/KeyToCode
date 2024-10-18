@@ -43,7 +43,8 @@
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0">
             <StackPanel Orientation="Horizontal">
                 <ComboBox x:Name="ProcessComboBox" Width="300" Height="30"
-                          SelectionChanged="ProcessComboBox_SelectionChanged">
+                          SelectionChanged="ProcessComboBox_SelectionChanged"
+                          DropDownOpened="ProcessComboBox_DropDownOpened">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

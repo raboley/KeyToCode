@@ -269,6 +269,13 @@ private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
             }
         }
     }
+    private void ProcessComboBox_DropDownOpened(object sender, EventArgs e)
+    {
+        // get current selected process
+        var selectedProcess = ProcessComboBox.SelectedItem as dynamic;
+        PopulateProcessComboBox();
+        ProcessComboBox.SelectedValue = selectedProcess?.Id;
+    }
 
     private void StopRecordingAction()
     {
