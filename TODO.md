@@ -1,5 +1,6 @@
 ﻿# TODO before release
 
+* when you click the combo box it should refresh the current processes.
 * when hitting the stop recording button it should move focus back to the scripter window
 * make a button that will make the playback loop endlessly
 * package up the keyboard class and publish it
