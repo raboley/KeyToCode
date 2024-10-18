@@ -92,6 +92,9 @@ public class RecordKeyboard
 
         var dedupedKeyEvents = RemoveExtraKeyDownsForHeldKeys(keyEvents);
 
+        if (dedupedKeyEvents.Count == 0)
+            return "";
+        
         var stringBuilder = new StringBuilder();
         long previousTimestamp = 0;
 

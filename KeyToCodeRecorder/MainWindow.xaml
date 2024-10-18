@@ -41,17 +41,22 @@
             </MenuItem>
         </Menu>
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0">
-            <ComboBox x:Name="ProcessComboBox" Width="300" Height="30"
-                      SelectionChanged="ProcessComboBox_SelectionChanged">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,0" />
-                            <TextBlock Text="{Binding ProcessName}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+            <StackPanel Orientation="Horizontal">
+                <ComboBox x:Name="ProcessComboBox" Width="300" Height="30"
+                          SelectionChanged="ProcessComboBox_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,0" />
+                                <TextBlock Text="{Binding ProcessName}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button x:Name="SettingsButton" Width="30" Height="30" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10" Click="SettingsButton_Click">
+                    <TextBlock Text="⚙" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Button>
+            </StackPanel>
             <DockPanel Margin="0,20,0,0">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <Button x:Name="RecordButton" Content="● Record" Width="100" Height="50"

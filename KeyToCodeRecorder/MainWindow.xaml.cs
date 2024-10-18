@@ -31,10 +31,14 @@ public partial class MainWindow : INotifyPropertyChanged
     private const int WM_KEYDOWN = 0x0100;
     private static LowLevelKeyboardProc _proc = HookCallback;
     private static IntPtr _hookID = IntPtr.Zero;
+    
+    public static MainWindow Instance { get; private set; }
+    private static Dictionary<string, VKey> _keyActions;
 
     public MainWindow()
     {
         InitializeComponent();
+        Instance = this;
         var windowHelper = new WindowHelper();
 
         DataContext = this;
@@ -47,14 +51,7 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
         }
 
-        if (_config.KeyActions == null || _config.KeyActions.Count == 0)
-        {
-            _config.KeyActions = new Dictionary<string, VKey>
-            {
-                ["stopRecording"] = VKey.F5
-            };
-            WriteConfig();
-        }
+        _keyActions = _config.KeyActions;
 
         var keyActions = new Dictionary<VKey, Action>
         {
@@ -79,6 +76,22 @@ public partial class MainWindow : INotifyPropertyChanged
         // Set the global keyboard hook
         _hookID = SetHook(_proc);
     }
+    
+    private void LoadConfig()
+    {
+        _config = GetConfig() ?? new Config();
+        _keyActions = _config.KeyActions; // Update the static field
+        OnPropertyChanged(nameof(AutomaticallySelectLastProcess));
+        OnPropertyChanged(nameof(AutomaticallyCopyOutputToClipboard));
+        OnPropertyChanged(nameof(AutomaticallyOpenLastSavedFile));
+    }
+
+    private void WriteConfig()
+    {
+        var json = JsonSerializer.Serialize(_config);
+        File.WriteAllText(ConfigFilePath, json);
+        _keyActions = _config.KeyActions; // Update the static field
+    }
 
     private static IntPtr SetHook(LowLevelKeyboardProc proc)
     {
@@ -96,20 +109,18 @@ public partial class MainWindow : INotifyPropertyChanged
         if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
         {
             int vkCode = Marshal.ReadInt32(lParam);
-            // make this dynamic, so it isn't hard coded to F5
-            // add a key for play and stop playing
-            if (vkCode == (int)VKey.F5)
+            var stopRecordingKey = _keyActions["stopRecording"];
+
+            if (vkCode == (int)stopRecordingKey)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    var mainWindow = (MainWindow)Application.Current.MainWindow;
-                    mainWindow.RecordButton_Click(mainWindow.RecordButton, new RoutedEventArgs());
+                    MainWindow.Instance.RecordButton_Click(MainWindow.Instance.RecordButton, new RoutedEventArgs());
                 });
             }
         }
         return CallNextHookEx(_hookID, nCode, wParam, lParam);
     }
-
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -137,6 +148,12 @@ public partial class MainWindow : INotifyPropertyChanged
     private void SaveAs_CanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         e.CanExecute = !string.IsNullOrEmpty(OutputTextBox.Text);
+    }
+    
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        // open the directory where the settings file is stored 
+        Process.Start("explorer.exe", "/select," + ConfigFilePath);
     }
 
     private void OutputTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -289,20 +306,6 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             ProcessComboBox.SelectedValue = process.Id;
         }
-    }
-
-    private void LoadConfig()
-    {
-        _config = GetConfig() ?? new Config();
-        OnPropertyChanged(nameof(AutomaticallySelectLastProcess));
-        OnPropertyChanged(nameof(AutomaticallyCopyOutputToClipboard));
-        OnPropertyChanged(nameof(AutomaticallyOpenLastSavedFile));
-    }
-
-    private void WriteConfig()
-    {
-        var json = JsonSerializer.Serialize(_config);
-        File.WriteAllText(ConfigFilePath, json);
     }
 
     private static Config? GetConfig()
