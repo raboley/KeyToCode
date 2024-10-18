@@ -13,6 +13,7 @@ using System.Windows.Interop;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Win32;
 
@@ -35,63 +36,67 @@ public partial class MainWindow : INotifyPropertyChanged
     public static MainWindow Instance { get; private set; }
     private static Dictionary<string, VKey> _keyActions;
 
-    public MainWindow()
+public MainWindow()
+{
+    InitializeComponent();
+    Instance = this;
+    var windowHelper = new WindowHelper();
+
+    DataContext = this;
+    PopulateProcessComboBox();
+    LoadConfig();
+    InitializeKeyActions();
+
+    var keyActions = new Dictionary<VKey, Action>
     {
-        InitializeComponent();
-        Instance = this;
-        var windowHelper = new WindowHelper();
+        [_keyActions["toggleRecordingStartStop"]] = () => { },
+        [_keyActions["togglePlayStartStop"]] = () => { }
+    };
 
-        DataContext = this;
-        PopulateProcessComboBox();
-        LoadConfig();
-        if (_config == null)
+    _recordKeyboard = new RecordKeyboard(windowHelper, keyActions);
+    _playbackKeyboard = new PlaybackKeyboardCode(windowHelper);
+
+    if (_config.AutomaticallySelectLastProcess)
+        LoadSelectedProcess();
+
+    if (_config.AutomaticallyOpenLastSavedFile)
+    {
+        _currentFilePath = _config.LastSavedFilePath;
+        if (File.Exists(_currentFilePath))
         {
-            _config = new Config();
-            WriteConfig();
-            return;
+            OutputTextBox.Text = File.ReadAllText(_currentFilePath);
         }
-
-        if (_config.KeyActions == null || _config.KeyActions.Count == 0)
-        {
-            _config.KeyActions = new Dictionary<string, string>
-            {
-                ["toggleRecordingStartStop"] = VKey.F5.ToString()
-            };
-            _keyActions = _config.KeyActions.ToDictionary(
-                kvp => kvp.Key,
-                kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
-            );
-            WriteConfig();
-        }
-
-        _keyActions = _config.KeyActions.ToDictionary(
-            kvp => kvp.Key,
-            kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
-        );
-
-        var keyActions = new Dictionary<VKey, Action>
-        {
-            [_keyActions["toggleRecordingStartStop"]] = () => { }
-        };
-
-        _recordKeyboard = new RecordKeyboard(windowHelper, keyActions);
-        _playbackKeyboard = new PlaybackKeyboardCode(windowHelper);
-
-        if (_config.AutomaticallySelectLastProcess)
-            LoadSelectedProcess();
-
-        if (_config.AutomaticallyOpenLastSavedFile)
-        {
-            _currentFilePath = _config.LastSavedFilePath;
-            if (File.Exists(_currentFilePath))
-            {
-                OutputTextBox.Text = File.ReadAllText(_currentFilePath);
-            }
-        }
-
-        // Set the global keyboard hook
-        _hookID = SetHook(_proc);
     }
+
+    // Set the global keyboard hook
+    _hookID = SetHook(_proc);
+}
+   
+   private void InitializeKeyActions()
+{
+    if (_config.KeyActions == null)
+    {
+        _config.KeyActions = new Dictionary<string, string>();
+    }
+
+    AddDefaultKeyAction("toggleRecordingStartStop", VKey.F4);
+    AddDefaultKeyAction("togglePlayStartStop", VKey.F5);
+
+    _keyActions = _config.KeyActions.ToDictionary(
+        kvp => kvp.Key,
+        kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
+    );
+
+    WriteConfig();
+}
+
+private void AddDefaultKeyAction(string actionName, VKey defaultKey)
+{
+    if (!_config.KeyActions.ContainsKey(actionName))
+    {
+        _config.KeyActions[actionName] = defaultKey.ToString();
+    }
+}
 
     private void LoadConfig()
     {
@@ -136,24 +141,32 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
-    private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+{
+    if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
     {
-        if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
+        int vkCode = Marshal.ReadInt32(lParam);
+        var toggleRecordingStartStopKey = _keyActions["toggleRecordingStartStop"];
+        var togglePlayStartStopKey = _keyActions["togglePlayStartStop"];
+
+        if (vkCode == (int)toggleRecordingStartStopKey)
         {
-            int vkCode = Marshal.ReadInt32(lParam);
-            var toggleRecordingStartStopKey = _keyActions["toggleRecordingStartStop"];
-
-            if (vkCode == (int)toggleRecordingStartStopKey)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    MainWindow.Instance.RecordButton_Click(MainWindow.Instance.RecordButton, new RoutedEventArgs());
-                });
-            }
+                MainWindow.Instance.RecordButton_Click(MainWindow.Instance.RecordButton, new RoutedEventArgs());
+            });
         }
-
-        return CallNextHookEx(_hookID, nCode, wParam, lParam);
+        else if (vkCode == (int)togglePlayStartStopKey)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                MainWindow.Instance.PlayButton_Click(MainWindow.Instance.PlayButton, new RoutedEventArgs());
+            });
+        }
     }
+
+    return CallNextHookEx(_hookID, nCode, wParam, lParam);
+}
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -286,10 +299,24 @@ public partial class MainWindow : INotifyPropertyChanged
         Clipboard.SetText(OutputTextBox.Text);
     }
 
+    private bool _isPlaying = false;
+
     private async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
-        var inputKeys = OutputTextBox.Text;
-        await _playbackKeyboard.Play(inputKeys);
+        _isPlaying = !_isPlaying;
+        if (_isPlaying)
+        {
+            PlayButton.Content = "■ Stop";
+            var inputKeys = OutputTextBox.Text;
+            await Task.Run(() => _playbackKeyboard.Play(inputKeys));
+            _isPlaying = false;
+            PlayButton.Content = "▶ Play";
+        }
+        else
+        {
+            _playbackKeyboard.Stop();
+            PlayButton.Content = "▶ Play";
+        }
     }
 
     private void StartRecording()

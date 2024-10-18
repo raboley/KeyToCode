@@ -2,20 +2,25 @@
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
-// PlaybackKeyboardCode.cs
 namespace KeyToCode;
 
 public class PlaybackKeyboardCode
 {
     private readonly WindowHelper _windowHelper;
+    private CancellationTokenSource _cancellationTokenSource;
+    public CancellationToken CancellationToken { get; set; }
 
     public PlaybackKeyboardCode(WindowHelper windowHelper)
     {
         _windowHelper = windowHelper;
     }
-    
+
     public async Task Play(string inputKeys)
     {
+        _cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = _cancellationTokenSource.Token;
+        CancellationToken = cancellationToken;
+
         var assemblies = AppDomain.CurrentDomain.GetAssemblies()
             .Where(a => !string.IsNullOrEmpty(a.Location));
 
@@ -24,8 +29,26 @@ public class PlaybackKeyboardCode
             .AddImports("System", "System.Threading", "KeyToCode");
 
         var script = CSharpScript.Create(inputKeys, scriptOptions, typeof(Globals));
-        var globals = new Globals { _keyboard = this };
-        await script.RunAsync(globals);
+        var globals = new Globals { _keyboard = this};
+
+        try
+        {
+            await script.RunAsync(globals, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Script playback was cancelled");
+            // ensure all keys that were pressed are released
+            foreach (var key in Enum.GetValues(typeof(VKey)).Cast<VKey>())
+            {
+                KeyUp(key);
+            }
+        }
+    }
+
+    public void Stop()
+    {
+        _cancellationTokenSource?.Cancel();
     }
 
     public void Connect(IntPtr processMainWindowHandle)
@@ -35,7 +58,16 @@ public class PlaybackKeyboardCode
 
     public void Sleep(int milliseconds)
     {
-        Thread.Sleep(milliseconds);
+        var delayTask = Task.Delay(milliseconds, CancellationToken);
+        try
+        {
+            delayTask.Wait(CancellationToken);
+        }
+        catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
+        {
+            Console.WriteLine("Cancelling sleep, operation was cancelled");
+            CancellationToken.ThrowIfCancellationRequested();
+        }
     }
 
     public bool KeyDown(VKey key)
@@ -46,7 +78,7 @@ public class PlaybackKeyboardCode
         ForegroundKeyDown(key);
         return _windowHelper.PostMessage(_windowHelper.ProcessMainWindowHandle, Message.KeyDown, key);
     }
-    
+
     public bool SetForegroundWindow()
     {
         return _windowHelper.SetForegroundWindow();
@@ -91,10 +123,7 @@ public class PlaybackKeyboardCode
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, Input[] pInputs, int cbSize);
-    
-    /// <summary>Keyboard input type.</summary>
-    private const int InputKeyboard = 1;
 
-    /// <summary>Code for keyup event.</summary>
+    private const int InputKeyboard = 1;
     private const uint KeyeventfKeyup = 0x0002;
 }
