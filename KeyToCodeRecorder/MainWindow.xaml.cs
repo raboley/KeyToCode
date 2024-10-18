@@ -26,12 +26,12 @@ public partial class MainWindow : INotifyPropertyChanged
     private const string ConfigFilePath = "config.json";
     private Config _config;
     private string? _currentFilePath;
-    
+
     private const int WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100;
     private static LowLevelKeyboardProc _proc = HookCallback;
     private static IntPtr _hookID = IntPtr.Zero;
-    
+
     public static MainWindow Instance { get; private set; }
     private static Dictionary<string, VKey> _keyActions;
 
@@ -51,11 +51,27 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
         }
 
-        _keyActions = _config.KeyActions;
+        if (_config.KeyActions == null || _config.KeyActions.Count == 0)
+        {
+            _config.KeyActions = new Dictionary<string, string>
+            {
+                ["toggleRecordingStartStop"] = VKey.F5.ToString()
+            };
+            _keyActions = _config.KeyActions.ToDictionary(
+                kvp => kvp.Key,
+                kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
+            );
+            WriteConfig();
+        }
+
+        _keyActions = _config.KeyActions.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
+        );
 
         var keyActions = new Dictionary<VKey, Action>
         {
-            [_config.KeyActions["stopRecording"]] = () => { }
+            [_keyActions["toggleRecordingStartStop"]] = () => { }
         };
 
         _recordKeyboard = new RecordKeyboard(windowHelper, keyActions);
@@ -76,11 +92,18 @@ public partial class MainWindow : INotifyPropertyChanged
         // Set the global keyboard hook
         _hookID = SetHook(_proc);
     }
-    
+
     private void LoadConfig()
     {
         _config = GetConfig() ?? new Config();
-        _keyActions = _config.KeyActions; // Update the static field
+        if (_config.KeyActions != null)
+        {
+            _keyActions = _config.KeyActions.ToDictionary(
+                kvp => kvp.Key,
+                kvp => (VKey)Enum.Parse(typeof(VKey), kvp.Value)
+            );
+        }
+
         OnPropertyChanged(nameof(AutomaticallySelectLastProcess));
         OnPropertyChanged(nameof(AutomaticallyCopyOutputToClipboard));
         OnPropertyChanged(nameof(AutomaticallyOpenLastSavedFile));
@@ -88,9 +111,18 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void WriteConfig()
     {
-        var json = JsonSerializer.Serialize(_config);
+        _config.KeyActions = _keyActions.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToString()
+        );
+
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        var json = JsonSerializer.Serialize(_config, options);
         File.WriteAllText(ConfigFilePath, json);
-        _keyActions = _config.KeyActions; // Update the static field
     }
 
     private static IntPtr SetHook(LowLevelKeyboardProc proc)
@@ -109,9 +141,9 @@ public partial class MainWindow : INotifyPropertyChanged
         if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
         {
             int vkCode = Marshal.ReadInt32(lParam);
-            var stopRecordingKey = _keyActions["stopRecording"];
+            var toggleRecordingStartStopKey = _keyActions["toggleRecordingStartStop"];
 
-            if (vkCode == (int)stopRecordingKey)
+            if (vkCode == (int)toggleRecordingStartStopKey)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -119,8 +151,10 @@ public partial class MainWindow : INotifyPropertyChanged
                 });
             }
         }
+
         return CallNextHookEx(_hookID, nCode, wParam, lParam);
     }
+
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -139,7 +173,7 @@ public partial class MainWindow : INotifyPropertyChanged
         UnhookWindowsHookEx(_hookID);
         base.OnClosed(e);
     }
-    
+
     private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         e.CanExecute = IsUnsavedWork();
@@ -149,7 +183,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         e.CanExecute = !string.IsNullOrEmpty(OutputTextBox.Text);
     }
-    
+
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         // open the directory where the settings file is stored 
@@ -221,10 +255,12 @@ public partial class MainWindow : INotifyPropertyChanged
             }
         }
     }
+
     private void StopRecordingAction()
     {
         RecordButton_Click(this, new RoutedEventArgs());
     }
+
     private void RecordButton_Click(object sender, RoutedEventArgs e)
     {
         _isRecording = !_isRecording;
@@ -369,7 +405,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     public class Config
     {
-        public Dictionary<string, VKey> KeyActions { get; set; } = new();
+        public Dictionary<string, string> KeyActions { get; set; }
         public string? LastSelectedProcessName { get; set; }
         public string? LastSavedFilePath { get; set; }
         public bool AutomaticallySelectLastProcess { get; set; } = true;
@@ -424,15 +460,15 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
-        if (PreventLosingWork()) 
+        if (PreventLosingWork())
             return;
-        
+
         Application.Current.Shutdown();
     }
-    
+
     private void NewFile_Click(object sender, RoutedEventArgs e)
     {
-        if (PreventLosingWork()) 
+        if (PreventLosingWork())
             return;
 
         OutputTextBox.Clear();
@@ -443,7 +479,8 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         if (IsUnsavedWork())
         {
-            var result = MessageBox.Show("You have unsaved work. Do you want to discard it?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = MessageBox.Show("You have unsaved work. Do you want to discard it?", "Warning",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.No)
             {
                 return true;

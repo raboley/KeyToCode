@@ -1,6 +1,5 @@
 ﻿# TODO before release
 
-* Make it so you can customize the hotkeys for stopping and starting recording
 * Add a hotkey for playing the recording
 * when hitting the stop recording button it should move focus back to the scripter window
 * The play button should toggle between play and pause, and maybe we add a stop button as well?
