@@ -118,6 +118,21 @@ jobs:
         name: MSIX Package
         path: ${{ env.Wap_Project_Directory }}\AppPackages
 
+    - name: Get latest release version
+      id: get_version
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const latestRelease = await github.repos.getLatestRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          });
+          const version = latestRelease.data.tag_name.replace(/^v/, '');
+          const [major, minor, patch] = version.split('.').map(Number);
+          return `v${major}.${minor}.${patch + 1}`;
+      result-encoding: string
+      result: new_version
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
