@@ -144,6 +144,7 @@ public partial class MainWindow : INotifyPropertyChanged
         OnPropertyChanged(nameof(AutomaticallySelectLastProcess));
         OnPropertyChanged(nameof(AutomaticallyCopyOutputToClipboard));
         OnPropertyChanged(nameof(AutomaticallyOpenLastSavedFile));
+        OnPropertyChanged(nameof(LoopPlayback));
     }
 
     private void SetKeyActions()
@@ -155,7 +156,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 var keyEnum = Enum.TryParse(typeof(VKey), kvp.Value, out var key);
                 if (!keyEnum)
                     return VKey.Null;
-                    
+
                 return (VKey)key;
             });
     }
@@ -390,7 +391,12 @@ public partial class MainWindow : INotifyPropertyChanged
             PlayButton.Content = "■ Stop";
             PlayButton.Background = new SolidColorBrush(Colors.MediumSeaGreen); // Lighter hue for stop mode
             var inputKeys = OutputTextBox.Text;
-            await Task.Run(() => _playbackKeyboard.Play(inputKeys));
+
+            do
+            {
+                await Task.Run(() => _playbackKeyboard.Play(inputKeys));
+            } while (_config.LoopPlayback && _isPlaying);
+
             _isPlaying = false;
             PlayButton.Content = "▶ Play";
             PlayButton.Background = new SolidColorBrush(Colors.Green); // Normal color
@@ -451,6 +457,22 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    private void ToggleLoopButton_Click(object sender, RoutedEventArgs e)
+    {
+        LoopPlayback = !LoopPlayback;
+
+        if (LoopPlayback)
+        {
+            ToggleLoopButton.Background = Brushes.Green;
+            ToggleLoopButton.Foreground = Brushes.White;
+        }
+        else
+        {
+            ToggleLoopButton.Background = Brushes.LightGray;
+            ToggleLoopButton.Foreground = Brushes.Black;
+        }
+    }
+
     public bool AutomaticallySelectLastProcess
     {
         get => _config.AutomaticallySelectLastProcess;
@@ -493,6 +515,20 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    public bool LoopPlayback
+    {
+        get => _config.LoopPlayback;
+        set
+        {
+            if (_config.LoopPlayback != value)
+            {
+                _config.LoopPlayback = value;
+                OnPropertyChanged();
+                WriteConfig();
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -500,15 +536,6 @@ public partial class MainWindow : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    public class Config
-    {
-        public Dictionary<string, string> KeyActions { get; set; }
-        public string? LastSelectedProcessName { get; set; }
-        public string? LastSavedFilePath { get; set; }
-        public bool AutomaticallySelectLastProcess { get; set; } = true;
-        public bool AutomaticallyCopyOutputToClipboard { get; set; } = true;
-        public bool AutomaticallyOpenLastSavedFile { get; set; } = false;
-    }
 
     private void OpenFile_Click(object sender, RoutedEventArgs e)
     {
