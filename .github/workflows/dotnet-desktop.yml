@@ -129,9 +129,9 @@ jobs:
           });
           const version = latestRelease.data.tag_name.replace(/^v/, '');
           const [major, minor, patch] = version.split('.').map(Number);
-          return `v${major}.${minor}.${patch + 1}`;
+          const newVersion = `v${major}.${minor}.${patch + 1}`;
+          return { new_version: newVersion };
         result-encoding: string
-        result: new_version
 
     - name: Create Release
       id: create_release
