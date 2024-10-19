@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
-namespace KeyToCode;
+namespace KeyToCodeKeyboard;
 
 public class PlaybackKeyboardCode
 {

@@ -16,6 +16,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
+using KeyToCodeKeyboard;
 using Microsoft.Win32;
 
 namespace KeyScripter;

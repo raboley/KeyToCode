@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace KeyToCode;
+﻿namespace KeyToCodeKeyboard;
 
 public class Globals
 {

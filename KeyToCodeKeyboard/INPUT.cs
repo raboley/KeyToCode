@@ -1,4 +1,4 @@
-﻿namespace KeyToCode;
+﻿namespace KeyToCodeKeyboard;
 
 internal struct Input
 {

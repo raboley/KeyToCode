@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using KeyToCode;
+using KeyToCodeKeyboard;
 using Xunit;
 
 namespace KeyToCodeTests;

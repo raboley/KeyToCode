@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace KeyToCode;
+namespace KeyToCodeKeyboard;
 
 [StructLayout(LayoutKind.Explicit)]
 internal struct InputUnion

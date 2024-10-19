@@ -1,4 +1,6 @@
-﻿namespace KeyToCode;
+﻿using KeyToCodeKeyboard;
+
+namespace KeyToCode;
 
 public class KeyEvent
 {

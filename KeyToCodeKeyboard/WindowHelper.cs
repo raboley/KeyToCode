@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace KeyToCode;
+namespace KeyToCodeKeyboard;
 
 public class WindowHelper
 {

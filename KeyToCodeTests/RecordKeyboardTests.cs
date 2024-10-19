@@ -1,4 +1,5 @@
 using KeyToCode;
+using KeyToCodeKeyboard;
 using Xunit;
 
 namespace KeyScripterTests;

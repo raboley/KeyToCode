@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace KeyToCode;
+namespace KeyToCodeKeyboard;
 
 [StructLayout(LayoutKind.Sequential)]
 internal struct Mouseinput

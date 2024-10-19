@@ -1,4 +1,4 @@
-﻿namespace KeyToCode;
+﻿namespace KeyToCodeKeyboard;
 
 [Serializable]
 public enum VKey

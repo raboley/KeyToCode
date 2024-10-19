@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using KeyToCode;
+using KeyToCodeKeyboard;
 using Xunit;
 
 namespace KeyScripterTests;
