@@ -6,19 +6,21 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
-    paths:
-      - '.github/workflows/dotnet-desktop.yml'
-      - 'KeyToCode/**'
-      - 'KeyToCodeRecorder/**'
-      - 'KeyToCodeKeyboard/**'
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - '.github/workflows/dotnet-desktop.yml'
-      - 'KeyToCode/**'
-      - 'KeyToCodeRecorder/**'
-      - 'KeyToCodeKeyboard/**'
+#    branches: [ "main" ]
+    tags:
+      - 'v*.*.*'
+#    paths:
+#      - '.github/workflows/dotnet-desktop.yml'
+#      - 'KeyToCode/**'
+#      - 'KeyToCodeRecorder/**'
+#      - 'KeyToCodeKeyboard/**'
+#  pull_request:
+#    branches: [ "main" ]
+#    paths:
+#      - '.github/workflows/dotnet-desktop.yml'
+#      - 'KeyToCode/**'
+#      - 'KeyToCodeRecorder/**'
+#      - 'KeyToCodeKeyboard/**'
 
 jobs:
   build:
@@ -35,63 +37,60 @@ jobs:
       Wap_Project_Path: KeyToCodeRecorder\KeyToCodeRecorder.csproj
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 7.0.x
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 7.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore ${{ env.Solution_Name }}
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.Solution_Name }}
 
-    - name: Build the project
-      run: dotnet build ${{ env.Wap_Project_Path }} -c ${{ matrix.configuration }}
+      - name: Build the project
+        run: dotnet build ${{ env.Wap_Project_Path }} -c ${{ matrix.configuration }}
 
-    - name: Decode the pfx
-      run: |
-        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
-        $certificatePath = Join-Path -Path $env:Wap_Project_Directory -ChildPath GitHubActionsWorkflow.pfx
-        [IO.File]::WriteAllBytes("$certificatePath", $pfx_cert_byte)
+      - name: Decode the pfx
+        run: |
+          $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
+          $certificatePath = Join-Path -Path $env:Wap_Project_Directory -ChildPath GitHubActionsWorkflow.pfx
+          [IO.File]::WriteAllBytes("$certificatePath", $pfx_cert_byte)
 
-    - name: Publish the project
-      run: dotnet publish ${{ env.Wap_Project_Path }} -c ${{ matrix.configuration }} -o .\publish
+      - name: Publish the project
+        run: dotnet publish ${{ env.Wap_Project_Path }} -c ${{ matrix.configuration }} -o .\publish
 
-#    - name: Sign the app package
-#      run: |
-#        $certPath = Join-Path -Path $env:Wap_Project_Directory -ChildPath GitHubActionsWorkflow.pfx
-#        $publishPath = Join-Path -Path ./publish -ChildPath $env.Wap_Project_Directory
-#        SignTool sign /f $certPath /p ${{ secrets.Pfx_Key }} /tr http://timestamp.digicert.com /td sha256 /fd sha256 $publishPath\*.exe
-#
-    - name: Remove the pfx
-      run: Remove-Item -path $env:Wap_Project_Directory\GitHubActionsWorkflow.pfx
+      - name: Remove the pfx
+        run: Remove-Item -path $env:Wap_Project_Directory\GitHubActionsWorkflow.pfx
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Published App
-        path: .\publish
+      - name: Zip the published app
+        run: Compress-Archive -Path .\publish\* -DestinationPath .\Published_App.zip
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v0.1.$GITHUB_RUN_NUMBER
-        release_name: Release v0.1.$GITHUB_RUN_NUMBER
-        draft: false
-        prerelease: false
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Published App
+          path: .\Published_App.zip
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: .\publish
-        asset_name: Published_App.zip
-        asset_content_type: application/zip
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: .\Published_App.zip
+          asset_name: Published_App.zip
+          asset_content_type: application/zip
