@@ -6,21 +6,21 @@ permissions:
 
 on:
   push:
-#    branches: [ "main" ]
+    branches: [ "main" ]
     tags:
       - 'v*.*.*'
-#    paths:
-#      - '.github/workflows/dotnet-desktop.yml'
-#      - 'KeyToCode/**'
-#      - 'KeyToCodeRecorder/**'
-#      - 'KeyToCodeKeyboard/**'
-#  pull_request:
-#    branches: [ "main" ]
-#    paths:
-#      - '.github/workflows/dotnet-desktop.yml'
-#      - 'KeyToCode/**'
-#      - 'KeyToCodeRecorder/**'
-#      - 'KeyToCodeKeyboard/**'
+    paths:
+      - '.github/workflows/dotnet-desktop.yml'
+      - 'KeyToCode/**'
+      - 'KeyToCodeRecorder/**'
+      - 'KeyToCodeKeyboard/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/dotnet-desktop.yml'
+      - 'KeyToCode/**'
+      - 'KeyToCodeRecorder/**'
+      - 'KeyToCodeKeyboard/**'
 
 jobs:
   build:
@@ -66,13 +66,13 @@ jobs:
         run: Remove-Item -path $env:Wap_Project_Directory\GitHubActionsWorkflow.pfx
 
       - name: Zip the published app
-        run: Compress-Archive -Path .\publish\* -DestinationPath .\Published_App.zip
+        run: Compress-Archive -Path .\publish\* -DestinationPath .\KeyToCode.zip
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: Published App
-          path: .\Published_App.zip
+          name: KeyToCode
+          path: .\KeyToCode.zip
 
       - name: Create Release
         id: create_release
@@ -91,6 +91,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: .\Published_App.zip
-          asset_name: Published_App.zip
+          asset_path: .\KeyToCode.zip
+          asset_name: KeyToCode.zip
           asset_content_type: application/zip
